@@ -1,0 +1,304 @@
+---
+title: "Regression_Practice"
+author: "Veera_Namana"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#Clear environment variables
+```{r}
+
+rm(list = ls(all = TRUE))
+
+```
+
+
+```{r}
+
+getwd()
+
+```
+
+
+```{r}
+
+setwd("/Users/tejaswinamana/Downloads/practice")
+
+```
+
+#Read a csv file
+```{r}
+
+cars_data = read.csv(file = "Toyota_SimpleReg.csv", header = T)
+
+```
+
+
+#####Perform Exploratory Data Analysis
+
+#Display the column names
+```{r}
+
+colnames(cars_data)
+
+```
+
+#Structure of the dataset
+```{r}
+
+str(cars_data)
+
+```
+
+#number of rows in the dataset
+```{r}
+
+nrow(cars_data)
+
+```
+
+#number of columns in the dataset
+```{r}
+
+ncol(cars_data)
+
+```
+
+#summary of the dataset
+```{r}
+
+summary(cars_data)
+
+```
+
+#look for missing values
+```{r}
+
+sum(is.na(cars_data))
+
+```
+
+######Data Preprocessing
+
+#Drop the ID, Model attributes
+```{r}
+
+drop_cols <- c("Id","Model")
+cars_data[,drop_cols] <- NULL
+str(cars_data)
+
+```
+
+#Rename age column
+```{r}
+
+colnames(cars_data)[2] <- 'Age'
+str(cars_data)
+
+```
+
+#scatter plot
+
+#Plot the dependent and independent variables
+```{r}
+
+plot(cars_data$Age, cars_data$Price,
+     main = "Price vs Age",
+     xlab = "Age of the car(months)",
+     ylab = "Price in $",
+     col = "blue")
+
+grid(10,10, lwd = 1, col = 'blue')
+
+```
+#####Comments - Negative correlation
+
+
+#covariance between the attributes
+```{r}
+
+cov(cars_data$Price, cars_data$Age)
+
+```
+#The direction is negative i.e, Age of the car increases price decreases
+
+#Correlation between the attributes
+```{r}
+
+cor(cars_data)
+
+cor_data = cor(cars_data)
+
+```
+#Comments - Price and Age are strong negatively correlated
+
+
+#corrplot -  displaying correlation in plot
+```{r}
+
+library(corrplot)
+
+corrplot(cor_data, method = "number")
+
+```
+
+#model building
+```{r}
+
+set.seed(123)
+
+rows = seq(1, nrow(cars_data), 1)
+
+trainRows = sample(rows, (70*nrow(cars_data))/100)
+
+cars_train = cars_data[trainRows,]
+
+cars_test = cars_data[-trainRows,]
+
+nrow(cars_train)
+
+nrow(cars_test)
+
+```
+
+#Building the linear regression model
+```{r}
+
+LinReg = lm(Price~Age, data = cars_train)
+
+```
+
+#Read the model summary
+```{r}
+
+summary(LinReg)
+
+```
+#Multiple R squared - 0.7735. This is good
+#77% of variation in price of the car is explained by age of the car 
+#Age is significant (p value < 0.05)
+#Age and Price are negatively correlated and this is the reason we have negative value in coefficient of age
+#For every 1 year increase in Age Price of the car will go down by 170.057$
+
+
+#Plot the data points and line of best fit
+```{r}
+
+plot(cars_data$Age, cars_data$Price,
+     xlab = "Age of the car",
+     ylab = "Price in ($)",
+     main = "Car Price vs. Age:Best fit line", col = "blue")
+
+abline(LinReg, col = "red", lwd = 1)
+
+```
+
+#To exract the coefficients
+```{r}
+
+LinReg$coefficients
+
+LinReg$coefficients[1]
+
+LinReg$coefficients[2]
+
+```
+
+#Extracting residuals and fitted values
+```{r}
+
+#To extract the residuals
+head(LinReg$residuals)
+
+#To extract the predictions
+head(LinReg$fitted.values)
+
+```
+
+
+#Residual Analysis
+```{r}
+
+#Validity of linear regression assumptions
+
+
+par(mfrow= c(2,2))
+
+plot(LinReg, lwd = 1, col = "light green")
+
+```
+#From Normal Q-Q plot we can say "model is linear" assumption is satisfied
+
+#Additionally, error terms are normally distributed
+
+#From Residuals vs fitted plot we can say there is slight hetroscedasticity
+
+
+
+#Plot, residuals vs fitted values
+```{r}
+
+plot(LinReg$fitted.values, LinReg$residuals,
+     main = "Residual vs. Predicted values",
+     col = 'brown', lwd = 1, 
+     xlab = "Predicted values/ Fitted values",
+     ylab = "Residuals"
+     )
+
+abline(h = 0, col = 'blue', lwd = 2)
+
+grid(10, 10, lwd = 1)
+
+```
+#Same graph as we saw before, this is just to analyze better
+#Error terms does not have constant variance
+
+#Predict on Test Data
+```{r}
+
+test_Prediction = predict(LinReg, cars_test) 
+
+test_Actual = cars_test$Price 
+
+```
+
+
+#Report Performance Metrics
+```{r}
+
+library(DMwR)
+
+#Error verification on Train Data
+
+regr.eval(cars_train$Price, LinReg$fitted.values)
+
+#Error verification on Test Data
+
+regr.eval(test_Actual, test_Prediction)
+```
+#Train and Test performance metrics does not differ much
+
+#Test performance metrics can be further improved by applying some complex algorithms
