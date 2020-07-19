@@ -1,0 +1,833 @@
+---
+title: "Multiple_Linear_Regression_Practice"
+author: "Veera_Namana"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+#Clear Environment Variables
+
+```{r}
+
+rm(list = ls(all = TRUE))
+
+```
+
+
+```{r}
+
+getwd()
+
+```
+
+
+* The dataset has 506 rows and 14 columns.
+
+* The column/variable names' explanation is given below:
+
+1) __CRIM :__ Per capita Crime rate by town
+
+2) __ZN :__ Proportion of residential land zoned for lots over 25,000 sq.ft.
+
+3) __INDUS :__ Proportion of non-retail business acres per town
+
+4) __CHAS :___ Charles River dummy variable (= 1 if tract bounds river; 0 otherwise)
+
+5) __NOX :__ nitric oxides concentration (parts per 10 million)
+
+6) __RM :__ average number of rooms per dwelling
+
+7) __AGE :__ proportion of owner-occupied units built prior to 1940
+
+8) __DIS :__ weighted distances to five Boston employment centres
+
+9) __RAD :__ index of accessibility to radial highways
+
+10) __TAX :__ full-value property-tax rate per $10,000
+
+11) __PTRATIO :__ pupil-teacher ratio by town
+
+12) __B :__ 1000(Bk - 0.63)^2 where Bk is the proportion of African-Americans by town
+
+13) __LSTAT :__ Percentage of the population in the lower economic status 
+
+14) __MEDV  :__ Median value of owner-occupied homes in multiples of $1000
+
+
+```{r}
+
+housing_data <- read.csv(file = "HousingData.csv",
+                         header = T,
+                         sep =",")
+
+```
+
+
+```{r}
+
+str(housing_data)
+
+```
+
+#Take a look at the data using head and tail functions
+```{r}
+
+head(housing_data)
+
+tail(housing_data)
+
+```
+
+#Exploratory Analysis
+
+#Summary statistics
+```{r}
+
+summary(housing_data)
+
+```
+
+#Study the NA values per column
+```{r}
+
+colSums(is.na(housing_data))
+
+```
+
+
+```{r}
+
+sum(is.na(housing_data))
+
+```
+
+#Scatter Plot
+
+
+```{r}
+
+par(mfrow = c(3,3))
+
+plot(housing_data$LSTAT, housing_data$MV,
+     ylab = "Median House Price",
+     xlab = "Percentage of people in lower economic strata",
+     main = "Housing Price vs Status"
+     )
+
+plot(housing_data$ZN, housing_data$MV,
+     ylab = "Median House Price",
+     xlab = "per capita Crime rate by town",
+     main = "Housing Price vs Crime Rate"
+     )
+
+plot(housing_data$NOX, housing_data$MV,
+     ylab = "Median House Price",
+     xlab = "Nitric Oxides Concentration",
+     main = "Housing Price vs Nitric Oxides Concentration"
+     )
+
+plot(housing_data$AGE, housing_data$MV,
+     ylab = "Median House Price",
+     xlab = "Owner occupied units built prior to 1940",
+     main = "Housing Price vs Owner Occupied Units"
+     )
+
+plot(housing_data$RM, housing_data$MV,
+     ylab = "Median House Price",
+     xlab = "Average number of rooms per dwelling",
+     main = "Housing Price vs Average # of rooms"
+     )
+```
+#Housing Price vs Status  - shows a negative correlation, as Percentage of people in lower economic strata increases Median House Price decreases
+
+#Housing Price vs Crime Rate - There are very few points that has per capita crime rate by town > 30
+
+#Housing Price vs Nitric Oxides Concentration - This graph is not much useful. Though it has a downward trend, it is not continuous.There is also lot of variance around the trend
+
+#Housing Price vs Owner Occupied Units - As the owner occupied units increases median housing price reduces. Proportion of owner occupied units are more after 40. However, there is also a lot of variance
+
+#Housing Price vs Average # of rooms -  Seems like there is a linear relationship
+
+
+###Correlation plot
+```{r}
+
+library(corrplot)
+
+correlation_XPairwise = cor(housing_data, use = "complete.obs")
+
+corrplot(correlation_XPairwise, method = "number")
+```
+#There is a strong negative correlation between Housing price and Economic Strata. However,we cannot confirm as Correlation IS NOT Causation
+
+#There is a strong positive correlation between average rooms per dwelling and housing price
+
+#The other variables are moderately correlated with the dependent variable
+
+#There is a chance of multi collinearity because you can see many independent variables have strong correlation
+
+
+#Data Preprocessing
+
+#Converting the data type into required format
+```{r}
+
+housing_data$CHAS = as.factor(housing_data$CHAS)
+
+str(housing_data)
+
+```
+
+#Train/Test Split - 70:30
+```{r}
+
+set.seed(123)
+
+train_rows <- sample(x = 1:nrow(housing_data), size = 0.7 * nrow(housing_data))
+
+train_data <- housing_data[train_rows,]
+
+test_data <- housing_data[-train_rows,]
+
+dim(train_data)
+
+dim(test_data)
+
+```
+
+#Column wise missing values in Housing Data
+```{r}
+
+cat("Missing values in Train Data \n")
+colSums(is.na(train_data))
+
+cat("Missing values in Test Data \n")
+colSums(is.na(test_data))
+
+```
+
+#Missing values Imputation
+```{r}
+
+library(caret)
+
+#Before Imputation
+
+sum(is.na(train_data))
+
+sum(is.na(test_data))
+
+imputer_values <- preProcess(x = train_data[,!names(train_data) %in% c("CHAS")], method = "medianImpute")
+
+train_data[,!names(train_data)%in%c("CHAS")] <- predict(object = imputer_values, newdata = train_data[,!names(train_data)%in%c("CHAS")])
+
+sum(is.na(train_data[,!names(train_data)%in% c("CHAS")]))
+
+test_data[,!names(train_data)%in% c("CHAS")] <- predict(object = imputer_values, newdata = test_data[,!names(train_data)%in%c("CHAS")])
+
+sum(is.na(test_data[,!names(train_data) %in% c("CHAS")]))
+
+```
+
+#After Imputation
+```{r}
+
+sum(is.na(train_data))
+
+sum(is.na(test_data))
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
