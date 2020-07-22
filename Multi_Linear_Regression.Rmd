@@ -288,3 +288,24 @@ cat("Missing values check in Test data after imputation \n")
 
 colSums(is.na(test_data))
 ```
+
+#Standardize the data
+```{r}
+
+std_model <- preProcess(train_data[,!names(train_data) %in% c('MV','CHAS')], method = c("center","scale"))
+
+std_model
+```
+
+
+```{r}
+train_data[,!names(train_data) %in% c('MV','CHAS')] <- predict(object = std_model, newdata = train_data[,!names(train_data) %in% c('MV','CHAS')])
+
+test_data[,!names(test_data) %in% c('MV','CHAS')] <- predict(object = std_model,newdata = test_data[,!names(test_data) %in% c('MV','CHAS')])
+```
+
+```{r}
+
+summary(train_data)
+
+```
