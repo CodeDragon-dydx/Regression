@@ -309,3 +309,19 @@ test_data[,!names(test_data) %in% c('MV','CHAS')] <- predict(object = std_model,
 summary(train_data)
 
 ```
+
+```{r}
+model_basic <- lm(MV~., data = (train_data))
+```
+
+```{r}
+summary(model_basic)
+```
+
+#Adjusted R square is 74 percent
+
+#We can explain Median value of owner-occupied homes with the given dependent variables with 74 percent variation
+
+#p value of the model is 2.2e-16 < 0.05 .The model is significant.
+
+#Indus, Age and CRIM are not significant
