@@ -80,6 +80,8 @@ getwd()
 
 ```{r}
 
+setwd("/Users/tejaswinamana/Downloads/practice")
+
 housing_data <- read.csv(file = "HousingData.csv",
                          header = T,
                          sep =",")
@@ -325,3 +327,73 @@ summary(model_basic)
 #p value of the model is 2.2e-16 < 0.05 .The model is significant.
 
 #Indus, Age and CRIM are not significant
+
+```{r}
+df.residuals = model_basic$residuals
+```
+
+```{r}
+Residuals = function(model, data, target){
+  predicted = predict(model, data)
+  residuals = target - predicted
+  return(residuals)
+}
+
+dfResiduals = Residuals(model_basic, train_data, train_data$MV)
+```
+
+#Influential Observations
+#Cooks distance
+```{r}
+cook = cooks.distance(model_basic)
+
+plot(cook, ylab = "Cook's distance")
+
+max = as.numeric(which.max(cook))
+
+max
+
+points(max, cook[max], col = "red", pch = 19)
+
+text(seq(1:nrow(train_data)), cook, labels = rownames(train_data))
+```
+
+```{r}
+train_cook <- train_data[-max,]
+
+dim(train_cook)
+```
+#model building after removing influential observations
+```{r}
+model_basic2 <- lm(formula = MV~., data = train_cook)
+
+summary(model_basic2)
+
+par(mfrow = c(2,2))
+
+plot(model_basic2)
+```
+#From Q-Q Plot "Model is linear" assumption satisfied
+
+#error terms are normally distributed
+
+#From Residuality vs fitted plot we can not say there is hetroscedasticity, it seems to have a constant variance
+
+#Adjusted R sq did not improve much - 75% 
+
+#Step AIC model
+```{r}
+
+library(MASS)
+
+model_aic <- stepAIC(model_basic2, direction = "both", trace = 1)
+
+model_aic
+
+summary(model_aic)
+
+par(mfrow = c(2,2))
+
+plot(model_aic)
+
+```
