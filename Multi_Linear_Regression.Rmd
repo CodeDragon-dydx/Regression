@@ -392,8 +392,76 @@ model_aic
 
 summary(model_aic)
 
+```
+
+
+```{r}
+
 par(mfrow = c(2,2))
 
 plot(model_aic)
 
 ```
+
+#Modifying the model with VIF
+```{r}
+
+library(car)
+
+vif(model_basic)
+
+vif(model_aic)
+
+```
+
+```{r}
+
+cor(housing_data$RAD, housing_data$TAX, use = "complete.obs")
+
+```
+
+
+```{r}
+
+model3 <- lm(formula = MV~CRIM+ZN+CHAS+NOX+RM+DIS+RAD+PT+B+LSTAT, data = train_data)
+
+summary(model3)
+
+par(mfrow = c(2,2))
+
+plot(model3)
+
+vif(model3
+    )
+
+```
+
+#The third model after verifying VIF has a similar R^2 score compared ti the previous models with significant lower number of explanatory variables and inter variable interactions
+
+#The VIF values of the predictors in the third model are lower when compared to the outer two models
+
+#Due to the above two reasons we pick the third model
+
+#Prediction
+```{r}
+
+preds_model <- predict(model3, test_data[,!(names(test_data) %in% c("MV"))])
+
+preds_model
+```
+
+#Evaluate the model
+```{r}
+
+library(DMwR)
+
+regr.eval(train_data$MV, model3$fitted.values)
+
+regr.eval(test_data$MV, preds_model)
+```
+
+#Error metrics is not far apart for train and test data after its evaluated on third model
+
+###Future Scope
+#More models can be tried to improve Adjusted R^2
+#Data Transformation can be applied
