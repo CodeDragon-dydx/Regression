@@ -1,0 +1,186 @@
+---
+title: "Logistic_Regression"
+author: "Veera_Namana"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r}
+
+rm(list = ls(all = TRUE))
+
+```
+
+#Read the data
+```{r}
+
+getwd()
+
+```
+
+
+
+```{r}
+
+bank_data <- read.table("bank.txt", header = T, sep = ";")
+
+```
+## Data Description
+
+* The dataset is from a bank, using which we have to predict whether the subject subscribes to a term deposit or not
+
+* The dataset has the following attributes:
+
+1 - age (numeric)
+
+2 - job : type of job (categorical: "admin.","unknown","unemployed","management","housemaid","entrepreneur","student",                              "blue-collar","self-employed","retired","technician","services") 
+
+3 - marital : marital status (categorical: "married","divorced","single"; note: "divorced" means divorced or widowed)
+
+4 - education (categorical: "unknown","secondary","primary","tertiary")
+
+5 - default: has credit in default? (binary: "yes","no")
+
+6 - balance: average yearly balance, in euros (numeric) 
+
+7 - housing: has housing loan? (binary: "yes","no")
+
+8 - loan: has personal loan? (binary: "yes","no")
+
+9 - contact: contact communication type (categorical: "unknown","telephone","cellular") 
+
+10 - day: last contact day of the month (numeric)
+
+11 - month: last contact month of year (categorical: "jan", "feb", "mar", ..., "nov", "dec")
+
+12 - duration: last contact duration, in seconds (numeric)
+
+13 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)
+
+14 - pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric, -1 means client was not previously contacted)
+  
+15 - previous: number of contacts performed before this campaign and for this client (numeric)
+
+16 - poutcome: outcome of the previous marketing campaign (categorical: "unknown","other","failure","success")
+
+__Response Variable (desired target):__
+
+17 - y - has the client subscribed to a __term deposit?__ (binary: "yes","no")
+
+#Understand the data
+```{r}
+
+str(bank_data)
+
+```
+
+```{r}
+dim(bank_data)
+
+```
+
+```{r}
+
+summary(bank_data)
+
+```
+
+```{r}
+
+head(bank_data)
+
+tail(bank_data)
+
+```
+
+#Data Preprocessing
+
+#Missing values
+```{r}
+
+sum(is.na(bank_data))
+
+```
+
+#Train/Test Split
+
+```{r}
+
+library(caret)
+
+set.seed(786)
+
+train_rows <- createDataPartition(bank_data$y, p = 0.7, list = F)
+
+train_data <- bank_data[train_rows,]
+
+test_data <- bank_data[-train_rows,]
+
+```
+
+```{r}
+
+head(test_data)
+
+dim(train_rows)
+
+```
+
+```{r}
+
+str(train_data)
+
+```
+
+#Build a model
+```{r}
+
+log_reg <- glm(y~., data = train_data, family = binomial)
+
+```
+
+```{r}
+
+summary(log_reg)
+
+```
+#Residual deviance < Null deviance.Hence, the model is good
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
