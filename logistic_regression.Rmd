@@ -1,7 +1,9 @@
 ---
 title: "Logistic_Regression"
 author: "Veera_Namana"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -170,17 +172,115 @@ summary(log_reg)
 ```
 #Residual deviance < Null deviance.Hence, the model is good
 
+#Get a list of predictions(probability scores) using the predict function
 ```{r}
 
+prob_train <- predict(log_reg, type = "response")
+
+prob_train[1:6]
+
+```
+
+#Using the ROCR package create a "Prediction()" object
+```{r}
+
+library(ROCR)
+
+pred <- prediction(prob_train, train_data$y)
+
+```
+
+#Extract performance measures
+```{r}
+
+perf <- performance(pred, measure = "tpr", x.measure = "fpr")
+
+```
+
+#Plot the ROC curve using the extracted performance measures
+```{r}
+
+plot(perf, col = rainbow(10), colorize = T, print.cutoffs.at = seq(0,1,0.05))
+
+```
+#Probably I will choose 0.1 as cutoff because further that point true positive rate is not improving
+
+#Access the AUC score from the performance object
+```{r}
+
+perf_auc <- performance(pred, measure = "auc")
+
+auc <- perf_auc@y.values[[1]]
+
+print(auc)
+
+```
+
+
+```{r}
+
+str(test_data)
+
+```
+
+#Choose a cutoff value
+```{r}
+
+#A cutoff of 0.1 can be chosen after tradeoff
+
+```
+
+#Prediction on test data
+```{r}
+
+prob_test <- predict(log_reg, test_data, type = "response")
+
+preds_test <- ifelse(prob_test > 0.1, "yes","no")
+
+```
+
+#Evaluation metrics for classification
+
+#Create a confusion matrix using the table() function
+```{r}
+
+test_data_labs <- test_data$y
+
+conf_matrix <- table(test_data_labs, preds_test)
+
+print(conf_matrix)
 
 ```
 
 ```{r}
 
+specificity <- conf_matrix[1,1]/sum(conf_matrix[1,])
+
+print(specificity)
 
 ```
 
+
 ```{r}
 
+sensitivity <- conf_matrix[2,2]/sum(conf_matrix[2,])
 
+print(sensitivity)
+
+```
+
+#Accuracy
+```{r}
+
+accuracy <- sum(diag(conf_matrix)/sum(conf_matrix))
+
+print(accuracy)
+
+```
+
+#Automated computation through caret
+```{r}
+library(caret)
+
+confusionMatrix(as.factor(preds_test), test_data$y, positive = "yes")
 ```
